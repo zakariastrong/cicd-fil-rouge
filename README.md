@@ -1,4 +1,5 @@
 # TaskFlow — dépôt fil rouge CI/CD
+![CI](https://github.com/zakariastrong/cicd-fil-rouge/actions/workflows/ci.yaml/badge.svg)
 
 TaskFlow est une petite API de gestion de tâches écrite en Python avec FastAPI.
 C'est le projet fil rouge du module CI/CD (Mastère DevOps M1, Sup de Vinci) :
@@ -97,16 +98,43 @@ d'abord configurer sa clé. Sinon, ses commits seraient refusés.
 ## Pipeline CI
 
 Le pipeline est dans `.github/workflows/ci.yaml`. Il se lance à chaque Pull Request
-vers `main`. Il contient deux jobs qui tournent en même temps, chacun sur une
-machine neuve.
+vers `main`. Chaque job tourne sur une machine neuve.
 
 | Job | Ce qu'il vérifie |
 | --- | --- |
 | `lint` | La forme du code avec ruff : `ruff check .` cherche les erreurs (import inutile, variable jamais utilisée…) et `ruff format --check .` vérifie la mise en forme. |
-| `test` | Le bon fonctionnement du code : `pytest` lance les tests automatiques de l'API. |
+| `test` | Le bon fonctionnement du code avec `pytest`. Ce job tourne 3 fois en même temps, sur Python 3.11, 3.12 et 3.13 (matrice). |
+| `CI OK` | Attend la fin de tous les autres jobs et vérifie qu'ils ont tous réussi. |
 
-Les deux checks `lint` et `test` sont obligatoires dans le ruleset de `main`.
-Si l'un des deux est rouge, la Pull Request ne peut pas être mergée.
+Seul le check `CI OK` est obligatoire dans le ruleset de `main`.
+S'il est rouge, la Pull Request ne peut pas être mergée.
+
+### Accélérer le pipeline
+
+- **Cache pip** : les paquets téléchargés sont gardés d'un run à l'autre.
+- **Matrice** : les tests sur les 3 versions de Python tournent en parallèle.
+- **Concurrency** : si on pousse un nouveau commit, le run en cours sur la même branche est annulé.
+- **Artefact** : le rapport des tests (`rapport-tests-<version>`) est sauvegardé et téléchargeable depuis la page du run.
+
+Durée de l'étape `pip install` (job `test`, Python 3.12) :
+
+| | Durée |
+| --- | --- |
+| Sans cache | 6 s |
+| Avec cache | 3 s |
+
+Avec le cache, pip ne télécharge plus les paquets : il les récupère dans le cache
+et n'a plus qu'à les installer. Le gain est petit ici car le projet a peu de dépendances.
+
+### Le rôle de CI OK
+
+CI OK résume tous les autres jobs en un seul check : c'est le seul que le ruleset
+demande. Ainsi, on peut changer la matrice sans modifier le ruleset, alors qu'avant,
+ajouter la matrice avait bloqué toutes les PR, car le check `test` attendu n'existait plus.
+
+CI OK utilise `if: always()` pour tourner même si un autre job échoue : sans ça,
+il serait « skipped », et GitHub compte un check skipped comme réussi,
+donc une PR avec des tests rouges pourrait être mergée.
 
 ### Preuve : PR bloquée par un test cassé
 
