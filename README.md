@@ -93,3 +93,28 @@ prouver qui les a écrits. GitHub affiche alors « Verified ».
 
 Nous n'avons pas rendu la signature obligatoire, car chaque membre devrait
 d'abord configurer sa clé. Sinon, ses commits seraient refusés.
+
+## Pipeline CI
+
+Le pipeline est dans `.github/workflows/ci.yaml`. Il se lance à chaque Pull Request
+vers `main`. Il contient deux jobs qui tournent en même temps, chacun sur une
+machine neuve.
+
+| Job | Ce qu'il vérifie |
+| --- | --- |
+| `lint` | La forme du code avec ruff : `ruff check .` cherche les erreurs (import inutile, variable jamais utilisée…) et `ruff format --check .` vérifie la mise en forme. |
+| `test` | Le bon fonctionnement du code : `pytest` lance les tests automatiques de l'API. |
+
+Les deux checks `lint` et `test` sont obligatoires dans le ruleset de `main`.
+Si l'un des deux est rouge, la Pull Request ne peut pas être mergée.
+
+### Preuve : PR bloquée par un test cassé
+
+Nous avons cassé un test exprès (`test_create_task` attend `200` au lieu de `201`).
+Le job `test` échoue :
+
+![Test échoué](docs/captures/test-echoue.png)
+
+Et GitHub bloque le merge de la PR :
+
+![PR bloquée](docs/captures/pr-bloquee.png)
