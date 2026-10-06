@@ -45,3 +45,13 @@ jobs:
         with:
           name: rapport-tests-${{ matrix.python-version }}
           path: rapport-tests.xml
+    ci-ok:
+    name: CI OK
+    needs: [lint, test]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "lint : ${{ needs.lint.result }}"
+          echo "test : ${{ needs.test.result }}"
+          [ "${{ needs.lint.result }}" = "success" ] && [ "${{ needs.test.result }}" = "success" ]        
