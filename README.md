@@ -111,10 +111,6 @@ Si l'un des deux est rouge, la Pull Request ne peut pas être mergée.
 ### Preuve : PR bloquée par un test cassé
 
 Nous avons cassé un test exprès (`test_create_task` attend `200` au lieu de `201`).
-Le job `test` échoue :
+Le job `test` échoue et la PR est bloquée :
 
-![Test échoué](docs/captures/test-echoue.png)
 
-Et GitHub bloque le merge de la PR :
-
-![PR bloquée](docs/captures/pr-bloquee.png)
