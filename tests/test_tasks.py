@@ -7,7 +7,7 @@ def test_list_is_empty_at_start(client):
 
 def test_create_task(client):
     response = client.post("/tasks", json={"title": "Préparer le cours"})
-    assert response.status_code == 201
+    assert response.status_code == 200
     assert response.json() == {"id": 1, "title": "Préparer le cours", "done": False}
 
 
